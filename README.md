@@ -58,7 +58,10 @@ You can run the Squares API using Docker without using the command line:
 2. Open the project in Visual Studio (or VS Code).
 3. At the top of the IDE, select the Container (Dockerfile) run profile.
 4. Click **Run** (green play button). This will build and start the container automatically.
-5. Swagger opens in your browser to test endpoints. The port is chosen dynamically. You can find it in the Containers window → Ports tab. Example: https://localhost:<hostPort>/swagger/index.html
+5. Swagger opens in your browser to test endpoints. The port is chosen dynamically. You can find it in the Containers window → Ports tab. Example:
+   ```bash
+    https://localhost:<hostPort>/swagger/index.html
+   ```
 
 ## SLI calculation
 
@@ -73,10 +76,10 @@ This is implemented in middleware using a stopwatch to measure request duration 
 
 Example log:
 
---- SLI Metrics ---
-Total Requests: 10
-Successful Requests (2xx): 9
-Failed Requests (4xx/5xx): 1
+--- SLI Metrics ---  
+Total Requests: 10  
+Successful Requests (2xx): 9  
+Failed Requests (4xx/5xx): 1  
 Average Response Time: 259 ms
 
 ---
