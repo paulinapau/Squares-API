@@ -11,7 +11,7 @@ namespace SquaresAPI.Controllers
     [Route("api/v{version:apiVersion}/[controller]")]
     public class PointsController : ControllerBase
     {
-        //kazkur buvo blogas grazinamas kodas
+
         private readonly IPointRepository _repository;
         public PointsController(IPointRepository repository)
         {
