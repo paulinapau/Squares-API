@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SquaresAPI.Data;
+using SquaresAPI.Interfaces;
 using SquaresAPI.Models;
 
 namespace SquaresAPI.Controllers
@@ -10,8 +11,12 @@ namespace SquaresAPI.Controllers
     [Route("api/v{version:apiVersion}/[controller]")]
     public class PointsController : ControllerBase
     {
-        private readonly SquaresDbContext _context;
-        public PointsController(SquaresDbContext context) => _context = context;
+        //kazkur buvo blogas grazinamas kodas
+        private readonly IPointRepository _repository;
+        public PointsController(IPointRepository repository)
+        {
+            _repository = repository;
+        }
 
         /// <summary>
         /// Add a single point to the database
@@ -19,35 +24,22 @@ namespace SquaresAPI.Controllers
         /// <param name="request">Point with X and Y coordinates</param>
         /// <returns>List of all points</returns>
         /// <response code="201">Point created successfully</response>
-        /// <response code="400">Request body is missing or invalid</response>
         /// <response code="409">Point with the same coordinates already exists</response>
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<IActionResult> AddPoint([FromBody] PointDto request)
         {
-            if (request == null)
-                return BadRequest("Request body is required.");
-
-            bool exists = await _context.Points
-                .AnyAsync(p => p.X == request.X && p.Y == request.Y);
-
-            if (exists)
+            if (await _repository.ExistsAsync(request.X, request.Y))
                 return Conflict("Point already exists.");
 
-            var point = new Point
+            var point = await _repository.AddAsync(new Point
             {
                 X = request.X,
                 Y = request.Y
-            };
-            _context.Points.Add(point);
-            await _context.SaveChangesAsync();
+            });
 
-            return CreatedAtAction(
-                nameof(GetPointById),
-                new { id = point.Id },
-                point);
+            return CreatedAtAction(nameof(GetPointById), new { id = point.Id }, point);
 
         }
 
@@ -61,21 +53,13 @@ namespace SquaresAPI.Controllers
         /// <response code="404">Point with specified coordinates not found</response>
         [HttpDelete]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeletePoint([FromBody] PointDto request)
         {
-            if (request == null)
-                return BadRequest("Request body is required.");
+            bool deleted = await _repository.DeleteAsync(request.X, request.Y);
 
-            var existing = await _context.Points
-                .FirstOrDefaultAsync(p => p.X == request.X && p.Y == request.Y);
-
-            if (existing == null)
+            if (!deleted)
                 return NotFound($"Point with X={request.X}, Y={request.Y} does not exist.");
-
-            _context.Points.Remove(existing);
-            await _context.SaveChangesAsync();
 
             return NoContent();
         }
@@ -92,32 +76,19 @@ namespace SquaresAPI.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> ImportPoints([FromBody] List<PointDto> points)
         {
-            if (points == null || points.Count == 0)
+            if (points.Count == 0)
                 return BadRequest("Points list is required.");
 
-            var newPoints = new List<Point>();
-
-            foreach (var p in points)
+            var entities = points.Select(p => new Point
             {
-                bool exists = await _context.Points
-                    .Where(x => x.X == p.X && x.Y == p.Y)
-                    .AnyAsync();
+                X = p.X,
+                Y = p.Y
+            }).ToList();
 
-                if (!exists)
-                    newPoints.Add(new Point { X = p.X, Y = p.Y });
-            }
+            var result = await _repository.ImportAsync(entities);
 
-            if (newPoints.Count != 0)
-            {
-                _context.Points.AddRange(newPoints);
-                await _context.SaveChangesAsync();
-            }
-           
-
-            return Ok(await _context.Points.ToListAsync());
+            return Created("/api/points", result);
         }
-
-
 
         /// <summary>
         /// Retrieves all points from the database
@@ -128,17 +99,16 @@ namespace SquaresAPI.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAllPoints()
         {
-            var points = await _context.Points.ToListAsync();
-
-            return Ok(points);
+            return Ok(await _repository.GetAllAsync());
         }
-
 
         [HttpGet("{id}")]
         public async Task<ActionResult<Point>> GetPointById(int id)
         {
-            var point = await _context.Points.FindAsync(id);
-            if (point == null) return NotFound();
+            var point = await _repository.GetByIdAsync(id);
+            if (point == null)
+                return NotFound();
+
             return Ok(point);
         }
 

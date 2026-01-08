@@ -4,6 +4,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using SquaresAPI.Data;
 using SquaresAPI.Helpers;
+using SquaresAPI.Interfaces;
+using SquaresAPI.Repository;
+using SquaresAPI.Services;
 using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
@@ -13,6 +16,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
+
+builder.Services.AddScoped<IPointRepository, PointRepository>();
+builder.Services.AddScoped<ISquareService, SquareService>();
+
 builder.Services.AddApiVersioning(options =>
 {
     options.DefaultApiVersion = new ApiVersion(1, 0);

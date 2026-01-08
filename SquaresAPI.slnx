@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="SquaresAPI.Tests/SquaresAPI.Tests.csproj" Id="cad609df-c7c5-4232-8e1e-d4a8734c5c87" />
   <Project Path="SquaresAPI/SquaresAPI.csproj" />
 </Solution>

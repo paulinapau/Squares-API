@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using SquaresAPI.Data;
 using SquaresAPI.Helpers;
+using SquaresAPI.Interfaces;
 using SquaresAPI.Models;
 using System.Diagnostics;
 
@@ -12,8 +13,12 @@ namespace SquaresAPI.Controllers
     [Route("api/v{version:apiVersion}/[controller]")]
     public class SquaresController : ControllerBase
     {
-        private readonly SquaresDbContext _context;
-        public SquaresController(SquaresDbContext context) => _context = context;
+        private readonly ISquareService _squareService;
+
+        public SquaresController(ISquareService squareService)
+        {
+            _squareService = squareService;
+        }
 
         /// <summary>
         /// Retrieves all squares identified from the current set of points
@@ -28,16 +33,9 @@ namespace SquaresAPI.Controllers
         [ProducesResponseType(typeof(List<Square>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetSquares()
         {
-            var points = await _context.Points.ToListAsync();
-            var sw = Stopwatch.StartNew();
-            var squares = SquareHelper.GetSquares(points);
-            sw.Stop();
-
-            Console.WriteLine($"Squares computed in:");
-            Console.WriteLine($"Elapsed ticks: {sw.ElapsedTicks}");
-            Console.WriteLine($"Elapsed ms: {sw.Elapsed.TotalMilliseconds}");
-            Console.WriteLine($"Elapsed μs: {sw.Elapsed.TotalMicroseconds}");
+            var squares = await _squareService.GetSquaresAsync();
             return Ok(squares);
+
         }
 
         /// <summary>
@@ -53,13 +51,9 @@ namespace SquaresAPI.Controllers
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetSquaresCount()
         {
-            var points = await _context.Points.ToListAsync();
-
-            var count = SquareHelper.GetSquares(points).Count;
-
+            var count = await _squareService.GetSquareCountAsync();
             return Ok(count);
         }
-
 
     }
 }
